@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="si" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navoda - ණය ගෙවීම් මතක් කිරීමේ පද්ධතිය</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (xlsx) CDN for Excel Export/Import -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Sinhala-compatible Font Inter & Noto Sans Sinhala -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Sinhala:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans Sinhala', 'Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Noto Sans Sinhala', 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex flex-col justify-between custom-scrollbar transition-colors duration-200">
+
+    <!-- Login Container -->
+    <div id="loginOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md mx-4 p-8 border border-slate-200 dark:border-slate-700 text-center">
+            <div class="bg-emerald-600 text-white w-16 h-16 rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1">Navoda System</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">කරුණාකර ඔබගේ ගිණුමට පිවිසෙන්න</p>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">පරිශීලක නාමය (Username)</label>
+                    <input type="text" id="loginUser" required placeholder="admin" 
+                        class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">මුරපදය (Password)</label>
+                    <input type="password" id="loginPass" required placeholder="••••••••" 
+                        class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md transition text-sm mt-2">
+                    පිවිසෙන්න (Login)
+                </button>
+            </form>
+            <p class="text-xs text-slate-400 mt-4">මුල් පිවිසුම: Username: <b>admin</b> | Password: <b>1234</b></p>
+        </div>
+    </div>
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-hand-holding-dollar text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 dark:text-white leading-tight" data-i18n="appTitle">Navoda - ණය ගෙවීම් මතක් කිරීමේ පද්ධතිය</h1>
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" data-i18n="appSubtitle">ණය වාරික හා ඊළඟ දිනයන් සටහන් කරගන්න</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Change Password Button -->
+                <button onclick="openPasswordModal()" class="p-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition" title="මුරපදය වෙනස් කරන්න">
+                    <i class="fa-solid fa-key text-base"></i>
+                </button>
+
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleDarkMode()" class="p-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-amber-400 rounded-xl transition" title="Toggle Theme">
+                    <i id="themeIcon" class="fa-solid fa-moon text-base"></i>
+                </button>
+
+                <!-- Language Toggle Button -->
+                <button onclick="toggleLanguage()" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-white text-xs font-bold rounded-xl transition flex items-center space-x-1">
+                    <i class="fa-solid fa-globe text-emerald-600 dark:text-emerald-400"></i>
+                    <span id="langLabel">EN</span>
+                </button>
+                
+                <!-- Export Excel -->
+                <button onclick="exportToExcel()" class="inline-flex items-center space-x-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold rounded-xl transition" title="Excel File ලෙස බාගන්න">
+                    <i class="fa-solid fa-file-excel text-base"></i>
+                    <span class="hidden md:inline" data-i18n="exportBtn">Excel Export</span>
+                </button>
+
+                <!-- Import Excel -->
+                <label class="inline-flex items-center space-x-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl cursor-pointer transition" title="Excel ගොනුවක් ඇතුළත් කරන්න">
+                    <i class="fa-solid fa-file-import text-base"></i>
+                    <span class="hidden md:inline" data-i18n="importBtn">Excel Import</span>
+                    <input type="file" id="importFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="importFromExcel(event)">
+                </label>
+
+                <!-- Add New Loan -->
+                <button onclick="openLoanModal()" class="inline-flex items-center space-x-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span data-i18n="addBtn">අලුත් ණයක්</span>
+                </button>
+                
+                <!-- Logout -->
+                <button onclick="handleLogout()" class="p-2.5 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-400 rounded-xl transition" title="පද්ධතියෙන් ඉවත් වන්න">
+                    <i class="fa-solid fa-right-from-bracket text-base"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 max-w-sm"></div>
+
+        <!-- Dashboard Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex items-center justify-between transition-colors">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="statActive">සක්‍රීය ණය ගණන</p>
+                    <h3 id="statTotalLoans" class="text-2xl font-bold text-slate-900 dark:text-white mt-1">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1"><span data-i18n="statTotalSum">මුළු ණය එකතුව:</span> <span id="statTotalAmount" class="font-semibold text-slate-700 dark:text-slate-300">රු. 0</span></p>
+                </div>
+                <div class="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 p-3.5 rounded-xl">
+                    <i class="fa-solid fa-wallet text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex items-center justify-between transition-colors">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="statDueToday">අද ගෙවිය යුතු ණය</p>
+                    <h3 id="statDueToday" class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-i18n="statDueTodaySub">අද එකතු කරගත යුතුයි</p>
+                </div>
+                <div class="bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 p-3.5 rounded-xl">
+                    <i class="fa-solid fa-bell text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex items-center justify-between transition-colors">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="statOverdue">ප්‍රමාද වූ ගෙවීම්</p>
+                    <h3 id="statOverdue" class="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-i18n="statOverdueSub">දින පැන ගිය වාරික</p>
+                </div>
+                <div class="bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 p-3.5 rounded-xl">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex items-center justify-between transition-colors">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="statCompleted">ගෙවා නිමකළ ණය</p>
+                    <h3 id="statCompleted" class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" data-i18n="statCompletedSub">අවසන් වූ ණය</p>
+                </div>
+                <div class="bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 p-3.5 rounded-xl">
+                    <i class="fa-solid fa-circle-check text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 transition-colors">
+            <div class="w-full md:w-96 relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-search"></i>
+                </span>
+                <input type="text" id="searchInput" oninput="renderLoans()" placeholder="නම, දුරකථන අංකය හෝ සටහන් වලින් සොයන්න..." 
+                    class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+            </div>
+
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
+                <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline" data-i18n="filterLabel">තත්වය අනුව:</label>
+                <select id="filterStatus" onchange="renderLoans()" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="all" data-i18n="optAll">සියලු ණය (All)</option>
+                    <option value="today" data-i18n="optToday">අද ගෙවිය යුතු (Due Today)</option>
+                    <option value="overdue" data-i18n="optOverdue">ප්‍රමාද වූ (Overdue)</option>
+                    <option value="upcoming" data-i18n="optUpcoming">ඉදිරියට ඇති (Upcoming)</option>
+                    <option value="paid" data-i18n="optPaid">ගෙවා නිමකළ (Settled)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Loans Table List -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden transition-colors">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                <h2 class="font-bold text-slate-900 dark:text-white text-base" data-i18n="tableHeader">ණය ලැයිස්තුව (Loan Directory)</h2>
+                <span id="loanCountBadge" class="text-xs font-semibold px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-full">0</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/75 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700/80 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                            <th class="py-3.5 px-6" data-i18n="colBorrower">ණය ගැතියාගේ තොරතුරු</th>
+                            <th class="py-3.5 px-6" data-i18n="colAmount">ණය මුදල හා වාරිකය</th>
+                            <th class="py-3.5 px-6" data-i18n="colDueDate">ඊළඟ ගෙවන දිනය</th>
+                            <th class="py-3.5 px-6" data-i18n="colStatus">තත්වය (Status)</th>
+                            <th class="py-3.5 px-6 text-right" data-i18n="colActions">ක්‍රියාමාර්ග (Actions)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loanTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm text-slate-700 dark:text-slate-300">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptyState" class="hidden flex-col items-center justify-center py-16 px-4 text-center">
+                <div class="w-16 h-16 bg-slate-100 dark:bg-slate-700 text-slate-400 rounded-full flex items-center justify-center text-2xl mb-4">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h3 class="text-slate-800 dark:text-slate-200 font-semibold text-lg" data-i18n="emptyTitle">තවම ණය තොරතුරු ඇතුළත් කර නැත</h3>
+                <p class="text-slate-500 dark:text-slate-400 text-sm max-w-sm mt-1" data-i18n="emptySub">ඉහත "අලුත් ණයක් එකතු කරන්න" බොත්තම ඔබා පළමු ණය තොරතුර ඇතුළත් කරන්න.</p>
+                <button onclick="openLoanModal()" class="mt-4 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition" data-i18n="addBtn">
+                    + ණයක් එකතු කරන්න
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-4 mt-8 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 dark:text-slate-400" data-i18n="footerText">
+            Navoda ණය ගෙවීම් මතක් කිරීමේ පද්ධතිය &bull; Excel Export/Import පහසුකම සහිතයි &bull; සියලු තොරතුරු ඔබගේ බ්‍රවුසරයේ සුරක්ෂිත වේ.
+        </div>
+    </footer>
+
+    <!-- Add/Edit Loan Modal -->
+    <div id="loanModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden border border-slate-200 dark:border-slate-700 transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+                <h3 id="modalTitle" class="font-bold text-slate-900 dark:text-white text-lg" data-i18n="modalAddTitle">අලුත් ණය තොරතුරක් ඇතුළත් කිරීම</h3>
+                <button onclick="closeLoanModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-700 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="loanForm" onsubmit="saveLoan(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="loanId">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1" data-i18n="lblBorrowerName">ණය ගැතියාගේ නම *</label>
+                        <input type="text" id="borrowerName" required placeholder="උදා: කමල් පෙරේරා" 
+                            class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1" data-i18n="lblPhone">දුරකථන අංකය (WhatsApp) *</label>
+                        <input type="text" id="phoneNum" required placeholder="0771234567" 
+                            class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1" data-i18n="lblTotalAmount">මුළු ණය මුදල (රු.) *</label>
+                        <input type="number" step="0.01" id="totalAmount" required placeholder="50000" 
+                            class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1" data-i18n="lblInstallment">මාසික/වාරික මුදල (රු.) *</label>
+                        <input type="number" step="0.01" id="installmentAmount" required placeholder="5000" 
+                            class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1" data-i18n="lblDueDate">ඊළඟ ගෙවන දිනය (Due Date) *</label>
+                        <input type="date" id="dueDate" required 
+                            class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1" data-i18n="lblStatus">ණය තත්වය (Status)</label>
+                        <select id="statusSelect" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="active" data-i18n="optStatusActive">ගෙවීමට ඇත (Active)</option>
+                            <option value="paid" data-i18n="optStatusPaid">ගෙවා නිමකළ (Settled / Paid)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1" data-i18n="lblNotes">විශේෂ සටහන් (Notes)</label>
+                    <textarea id="notes" rows="2" placeholder="උදා: 3 වන වාරිකය..." 
+                        class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" onclick="closeLoanModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-xl transition" data-i18n="cancelBtn">
+                        අවලංගු කරන්න
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-sm transition" data-i18n="saveBtn">
+                        සුරකින්න (Save)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="passwordModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden border border-slate-200 dark:border-slate-700 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900 dark:text-white text-base">මුරපදය වෙනස් කිරීම</h3>
+                <button onclick="closePasswordModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form onsubmit="handlePasswordChange(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">නව පරිශීලක නාමය</label>
+                    <input type="text" id="newUsername" required class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">නව මුරපදය</label>
+                    <input type="password" id="newPassword" required class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closePasswordModal()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-xl">අවලංගු කරන්න</button>
+                    <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl">යාවත්කාලීන කරන්න</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden border border-slate-200 dark:border-slate-700 p-6 text-center">
+            <div id="customModalIcon" class="w-12 h-12 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center text-xl mx-auto mb-3">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <h3 id="customModalTitle" class="font-bold text-slate-900 dark:text-white text-lg mb-1">දැනුම්දීම</h3>
+            <p id="customModalMessage" class="text-slate-600 dark:text-slate-300 text-sm mb-5">පණිවිඩය මෙතැනට</p>
+            <div id="customModalButtons" class="flex space-x-3 justify-center">
+                <button onclick="closeCustomModal()" class="px-5 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition" data-i18n="okBtn">හරි</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const STORAGE_KEY = 'navoda_loan_reminder_system_data_v1';
+        const AUTH_USER_KEY = 'navoda_auth_user';
+        const AUTH_PASS_KEY = 'navoda_auth_pass';
+        const SESSION_KEY = 'navoda_is_logged_in';
+        const THEME_KEY = 'navoda_app_theme';
+        const LANG_KEY = 'navoda_app_lang';
+
+        let currentLang = localStorage.getItem(LANG_KEY) || 'si';
+
+        const i18n = {
+            si: {
+                appTitle: "Navoda - ණය ගෙවීම් මතක් කිරීමේ පද්ධතිය",
+                appSubtitle: "ණය වාරික හා ඊළඟ දිනයන් සටහන් කරගන්න",
+                exportBtn: "Excel Export",
+                importBtn: "Excel Import",
+                addBtn: "අලුත් ණයක් එකතු කරන්න",
+                statActive: "සක්‍රීය ණය ගණන",
+                statTotalSum: "මුළු ණය එකතුව:",
+                statDueToday: "අද ගෙවිය යුතු ණය",
+                statDueTodaySub: "අද එකතු කරගත යුතුයි",
+                statOverdue: "ප්‍රමාද වූ ගෙවීම්",
+                statOverdueSub: "දින පැන ගිය වාරික",
+                statCompleted: "ගෙවා නිමකළ ණය",
+                statCompletedSub: "අවසන් වූ ණය",
+                searchPlaceholder: "නම, දුරකථන අංකය හෝ සටහන් වලින් සොයන්න...",
+                filterLabel: "තත්වය අනුව:",
+                optAll: "සියලු ණය (All)",
+                optToday: "අද ගෙවිය යුතු (Due Today)",
+                optOverdue: "ප්‍රමාද වූ (Overdue)",
+                optUpcoming: "ඉදිරියට ඇති (Upcoming)",
+                optPaid: "ගෙවා නිමකළ (Settled)",
+                tableHeader: "ණය ලැයිස්තුව (Loan Directory)",
+                colBorrower: "ණය ගැතියාගේ තොරතුරු",
+                colAmount: "ණය මුදල හා වාරිකය",
+                colDueDate: "ඊළඟ ගෙවන දිනය",
+                colStatus: "තත්වය (Status)",
+                colActions: "ක්‍රියාමාර්ග (Actions)",
+                emptyTitle: "තවම ණය තොරතුරු ඇතුළත් කර නැත",
+                emptySub: "ඉහත \"අලුත් ණයක් එකතු කරන්න\" බොත්තම ඔබා පළමු ණය තොරතුර ඇතුළත් කරන්න.",
+                footerText: "Navoda ණය ගෙවීම් මතක් කිරීමේ පද්ධතිය • Excel Export/Import පහසුකම සහිතයි • සියලු තොරතුරු ඔබගේ බ්‍රවුසරයේ සුරක්ෂිත වේ.",
+                modalAddTitle: "අලුත් ණය තොරතුරක් ඇතුළත් කිරීම",
+                modalEditTitle: "ණය තොරතුරු වෙනස් කිරීම",
+                lblBorrowerName: "ණය ගැතියාගේ නම *",
+                lblPhone: "දුරකථන අංකය (WhatsApp) *",
+                lblTotalAmount: "මුළු ණය මුදල (රු.) *",
+                lblInstallment: "මාසික/වාරික මුදල (රු.) *",
+                lblDueDate: "ඊළඟ ගෙවන දිනය (Due Date) *",
+                lblStatus: "ණය තත්වය (Status)",
+                optStatusActive: "ගෙවීමට ඇත (Active)",
+                optStatusPaid: "ගෙවා නිමකළ (Settled / Paid)",
+                lblNotes: "විශේෂ සටහන් (Notes)",
+                cancelBtn: "අවලංගු කරන්න",
+                saveBtn: "සුරකින්න (Save)",
+                okBtn: "හරි",
+                statusPaid: "ගෙවා නිමකළ",
+                statusOverdue: "ප්‍රමාද වූ ගෙවීම්",
+                statusToday: "අද ගෙවිය යුතුය",
+                statusUpcoming: "ඉදිරියට ඇත",
+                paidDesc: "ණය ගෙවා ඇත",
+                overdueDesc: (days) => `දින ${days} ක් ප්‍රමාදයි!`,
+                todayDesc: "අද දිනයේ ගෙවිය යුතුයි!",
+                upcomingDesc: (days) => `තව දින ${days} ක් ඇත`,
+                currencyPrefix: "රු. ",
+                itemCountSuffix: " යි",
+                toastAddSuccess: "අලුත් ණය තොරතුර සාර්ථකව එකතු කෙරුණි!",
+                toastUpdateSuccess: "ණය තොරතුරු සාර්ථකව යාවත්කාලීන කෙරුණි!",
+                toastDeleteSuccess: "ණය තොරතුර මකා දමන ලදී.",
+                toastExportSuccess: "Excel ගොනුව (Export) සාර්ථකව ලබාගන්නා ලදී!",
+                toastImportSuccess: "Excel දත්ත (Import) සාර්ථකව ඇතුළත් කරගන්නා ලදී!",
+                toastImportError: "Excel හෝ CSV ගොනුව කියවීමට නොහැක.",
+                confirmDeleteTitle: "ණය තොරතුර මකා දැමීම",
+                confirmDeleteMsg: "මෙම ණය තොරතුර මකා දැමීමට ඔබට විශ්වාසද? මෙම ක්‍රියාව ආපසු හැරවිය නොහැක.",
+                confirmNextMonthTitle: "වාරිකය ලැබුණු බව තහවුරු කිරීම",
+                confirmNextMonthMsg: (date) => `මෙම මාසයේ වාරිකය ලැබුණු බව සටහන් කර ඊළඟ මාසයේ දිනය (${date}) ලෙස යාවත්කාලීන කිරීමට අවශ්‍යද?`,
+                toastNextMonthSuccess: (date) => `ගෙවීම් තහවුරු කෙරුණි! ඊළඟ ගෙවන දිනය ${date} ලෙස සටහන් විය.`,
+                waTemplate: (name, amount, date) => `ගරු ${name} මහතා/මහත්මියනි, ඔබ ලබාගත් ණය මුදලේ ඊළඟ වාරිකය වන රු. ${amount} ක් ගෙවීමට ඇති දිනය ${date} වේ. කරුණාකර අදාළ දිනයට පෙර ගෙවීම් සිදුකරන්න. ස්තූතියි!`
+            },
+            en: {
+                appTitle: "Navoda - Loan Due Date Reminder System",
+                appSubtitle: "Keep track of loan installments & due dates",
+                exportBtn: "Excel Export",
+                importBtn: "Excel Import",
+                addBtn: "Add New Loan",
+                statActive: "Active Loans",
+                statTotalSum: "Total Loan Sum:",
+                statDueToday: "Due Today",
+                statDueTodaySub: "Collect today",
+                statOverdue: "Overdue Payments",
+                statOverdueSub: "Past due date",
+                statCompleted: "Settled Loans",
+                statCompletedSub: "Completed",
+                searchPlaceholder: "Search by name, phone, or notes...",
+                filterLabel: "Filter Status:",
+                optAll: "All Loans",
+                optToday: "Due Today",
+                optOverdue: "Overdue",
+                optUpcoming: "Upcoming",
+                optPaid: "Settled",
+                tableHeader: "Loan Directory",
+                colBorrower: "Borrower Info",
+                colAmount: "Loan & Installment",
+                colDueDate: "Next Due Date",
+                colStatus: "Status",
+                colActions: "Actions",
+                emptyTitle: "No loan records found",
+                emptySub: "Click the \"Add New Loan\" button above to insert your first entry.",
+                footerText: "Navoda Loan Due Date Reminder System • Excel Export/Import Enabled • All data is safely stored.",
+                modalAddTitle: "Add New Loan Entry",
+                modalEditTitle: "Edit Loan Entry",
+                lblBorrowerName: "Borrower Name *",
+                lblPhone: "Phone Number (WhatsApp) *",
+                lblTotalAmount: "Total Loan Amount (LKR) *",
+                lblInstallment: "Installment Amount (LKR) *",
+                lblDueDate: "Next Due Date *",
+                lblStatus: "Loan Status",
+                optStatusActive: "Active",
+                optStatusPaid: "Settled / Paid",
+                lblNotes: "Notes / Remarks",
+                cancelBtn: "Cancel",
+                saveBtn: "Save Loan",
+                okBtn: "OK",
+                statusPaid: "Settled",
+                statusOverdue: "Overdue",
+                statusToday: "Due Today",
+                statusUpcoming: "Upcoming",
+                paidDesc: "Loan fully paid",
+                overdueDesc: (days) => `${days} day(s) overdue!`,
+                todayDesc: "Must collect today!",
+                upcomingDesc: (days) => `${days} day(s) remaining`,
+                currencyPrefix: "LKR ",
+                itemCountSuffix: " items",
+                toastAddSuccess: "New loan added successfully!",
+                toastUpdateSuccess: "Loan updated successfully!",
+                toastDeleteSuccess: "Loan deleted successfully.",
+                toastExportSuccess: "Excel file exported successfully!",
+                toastImportSuccess: "Excel data imported successfully!",
+                toastImportError: "Failed to parse Excel/CSV file.",
+                confirmDeleteTitle: "Delete Loan Record",
+                confirmDeleteMsg: "Are you sure you want to delete this record? This action cannot be undone.",
+                confirmNextMonthTitle: "Confirm Payment Received",
+                confirmNextMonthMsg: (date) => `Mark installment received for this month and update next due date to ${date}?`,
+                toastNextMonthSuccess: (date) => `Payment confirmed! Next due date updated to ${date}.`,
+                waTemplate: (name, amount, date) => `Dear ${name}, this is a gentle reminder that your loan installment of LKR ${amount} is due on ${date}. Please process the payment at your earliest convenience. Thank you!`
+            }
+        };
+
+        const defaultLoans = [];
+
+        // Auth Logic
+        function checkAuth() {
+            if (!localStorage.getItem(AUTH_USER_KEY)) {
+                localStorage.setItem(AUTH_USER_KEY, 'admin');
+                localStorage.setItem(AUTH_PASS_KEY, '1234');
+            }
+            const isLoggedIn = localStorage.getItem(SESSION_KEY);
+            if (isLoggedIn === 'true') {
+                document.getElementById('loginOverlay').classList.add('hidden');
+            } else {
+                document.getElementById('loginOverlay').classList.remove('hidden');
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('loginUser').value.trim();
+            const p = document.getElementById('loginPass').value.trim();
+            
+            const savedU = localStorage.getItem(AUTH_USER_KEY) || 'admin';
+            const savedP = localStorage.getItem(AUTH_PASS_KEY) || '1234';
+
+            if (u === savedU && p === savedP) {
+                localStorage.setItem(SESSION_KEY, 'true');
+                document.getElementById('loginOverlay').classList.add('hidden');
+                showToast('සාර්ථකව පිවිසෙන ලදී!', 'success');
+            } else {
+                showToast('වැරදි පරිශීලක නාමයක් හෝ මුරපදයකි!', 'error');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.setItem(SESSION_KEY, 'false');
+            checkAuth();
+            showToast('පද්ධතියෙන් ඉවත් විය.', 'info');
+        }
+
+        function openPasswordModal() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+            document.getElementById('newUsername').value = localStorage.getItem(AUTH_USER_KEY) || 'admin';
+            document.getElementById('newPassword').value = '';
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+        }
+
+        function handlePasswordChange(e) {
+            e.preventDefault();
+            const newU = document.getElementById('newUsername').value.trim();
+            const newP = document.getElementById('newPassword').value.trim();
+            if(newU && newP) {
+                localStorage.setItem(AUTH_USER_KEY, newU);
+                localStorage.setItem(AUTH_PASS_KEY, newP);
+                closePasswordModal();
+                showToast('පරිශීලක නාමය සහ මුරපදය සාර්ථකව වෙනස් විය!', 'success');
+            }
+        }
+
+        function getLoans() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (!data) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultLoans));
+                return defaultLoans;
+            }
+            try {
+                return JSON.parse(data);
+            } catch (e) {
+                return defaultLoans;
+            }
+        }
+
+        function saveLoansToStorage(loans) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(loans));
+        }
+
+        function initSettings() {
+            checkAuth();
+            const savedTheme = localStorage.getItem(THEME_KEY);
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun text-amber-400';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon text-slate-700';
+            }
+            applyLanguage(currentLang);
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon text-slate-700';
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'si' ? 'en' : 'si';
+            localStorage.setItem(LANG_KEY, currentLang);
+            applyLanguage(currentLang);
+            renderLoans();
+        }
+
+        function applyLanguage(lang) {
+            document.getElementById('langLabel').innerText = lang === 'si' ? 'EN' : 'SI';
+            document.getElementById('searchInput').placeholder = i18n[lang].searchPlaceholder;
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang][key]) {
+                    el.innerText = i18n[lang][key];
+                }
+            });
+        }
+
+        window.onload = function() {
+            initSettings();
+            renderLoans();
+        };
+
+        function getLoanDynamicStatus(loan, todayStr) {
+            if (loan.status === 'paid') return 'paid';
+            if (loan.dueDate < todayStr) return 'overdue';
+            if (loan.dueDate === todayStr) return 'today';
+            return 'upcoming';
+        }
+
+        function getNextMonthDate(currentDateStr) {
+            const parts = currentDateStr.split('-');
+            let year = parseInt(parts[0], 10);
+            let month = parseInt(parts[1], 10) - 1;
+            let day = parseInt(parts[2], 10);
+
+            let targetMonth = month + 1;
+            let targetYear = year;
+            if (targetMonth > 11) {
+                targetMonth = 0;
+                targetYear++;
+            }
+
+            const daysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            const targetDay = Math.min(day, daysInTargetMonth);
+
+            const finalMonthStr = String(targetMonth + 1).padStart(2, '0');
+            const finalDayStr = String(targetDay).padStart(2, '0');
+
+            return `${targetYear}-${finalMonthStr}-${finalDayStr}`;
+        }
+
+        function markPaymentReceived(id) {
+            const loans = getLoans();
+            const loan = loans.find(l => l.id === id);
+            if (!loan) return;
+
+            const nextDueDate = getNextMonthDate(loan.dueDate || new Date().toISOString().split('T')[0]);
+            const lang = i18n[currentLang];
+
+            showCustomConfirm(lang.confirmNextMonthTitle, lang.confirmNextMonthMsg(nextDueDate), () => {
+                let updatedLoans = loans.map(l => {
+                    if (l.id === id) {
+                        return {
+                            ...l,
+                            dueDate: nextDueDate,
+                            status: 'active'
+                        };
+                    }
+                    return l;
+                });
+
+                saveLoansToStorage(updatedLoans);
+                renderLoans();
+                showToast(lang.toastNextMonthSuccess(nextDueDate), 'success');
+            });
+        }
+
+        function renderLoans() {
+            const loans = getLoans();
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            const filterStatus = document.getElementById('filterStatus').value;
+            const lang = i18n[currentLang];
+            
+            const tbody = document.getElementById('loanTableBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+
+            let totalActiveCount = 0;
+            let totalAmountSum = 0;
+            let dueTodayCount = 0;
+            let overdueCount = 0;
+            let completedCount = 0;
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const filteredLoans = loans.filter(loan => {
+                const matchesSearch = (loan.borrowerName || '').toLowerCase().includes(searchQuery) ||
+                                      (loan.phoneNum || '').toLowerCase().includes(searchQuery) ||
+                                      (loan.notes && loan.notes.toLowerCase().includes(searchQuery));
+                
+                const calcStatus = getLoanDynamicStatus(loan, todayStr);
+                
+                let matchesFilter = true;
+                if (filterStatus === 'overdue') matchesFilter = (calcStatus === 'overdue');
+                else if (filterStatus === 'today') matchesFilter = (calcStatus === 'today');
+                else if (filterStatus === 'upcoming') matchesFilter = (calcStatus === 'upcoming');
+                else if (filterStatus === 'paid') matchesFilter = (loan.status === 'paid');
+
+                return matchesSearch && matchesFilter;
+            });
+
+            loans.forEach(loan => {
+                const calcStatus = getLoanDynamicStatus(loan, todayStr);
+                if (loan.status === 'paid') {
+                    completedCount++;
+                } else {
+                    totalActiveCount++;
+                    totalAmountSum += parseFloat(loan.totalAmount || 0);
+                    if (calcStatus === 'today') dueTodayCount++;
+                    if (calcStatus === 'overdue') overdueCount++;
+                }
+            });
+
+            document.getElementById('statTotalLoans').innerText = totalActiveCount;
+            document.getElementById('statTotalAmount').innerText = lang.currencyPrefix + totalAmountSum.toLocaleString();
+            document.getElementById('statDueToday').innerText = dueTodayCount;
+            document.getElementById('statOverdue').innerText = overdueCount;
+            document.getElementById('statCompleted').innerText = completedCount;
+            document.getElementById('loanCountBadge').innerText = filteredLoans.length + lang.itemCountSuffix;
+
+            if (filteredLoans.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            } else {
+                emptyState.classList.remove('flex');
+                emptyState.classList.add('hidden');
+            }
+
+            filteredLoans.forEach(loan => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition border-b border-slate-100 dark:border-slate-700/60 last:border-none";
+
+                const calcStatus = getLoanDynamicStatus(loan, todayStr);
+                let statusBadge = '';
+                let countdownText = '';
+
+                const dueDateObj = new Date(loan.dueDate);
+                const todayObj = new Date(todayStr);
+                const diffTime = dueDateObj - todayObj;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (loan.status === 'paid') {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-full"><i class="fa-solid fa-check mr-1"></i>${lang.statusPaid}</span>`;
+                    countdownText = `<span class="text-slate-400 dark:text-slate-500 text-xs">${lang.paidDesc}</span>`;
+                } else if (calcStatus === 'overdue') {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 rounded-full animate-pulse"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${lang.statusOverdue}</span>`;
+                    countdownText = `<span class="text-rose-600 dark:text-rose-400 font-semibold text-xs">${lang.overdueDesc(Math.abs(diffDays))}</span>`;
+                } else if (calcStatus === 'today') {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded-full"><i class="fa-solid fa-clock mr-1"></i>${lang.statusToday}</span>`;
+                    countdownText = `<span class="text-amber-600 dark:text-amber-400 font-semibold text-xs">${lang.todayDesc}</span>`;
+                } else {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-full"><i class="fa-solid fa-calendar-day mr-1"></i>${lang.statusUpcoming}</span>`;
+                    countdownText = `<span class="text-slate-600 dark:text-slate-400 text-xs">${lang.upcomingDesc(diffDays)}</span>`;
+                }
+
+                let cleanPhone = (loan.phoneNum || '').replace(/[^0-9]/g, '');
+                if (cleanPhone.startsWith('0')) {
+                    cleanPhone = '94' + cleanPhone.substring(1);
+                }
+
+                const instAmtFormatted = parseFloat(loan.installmentAmount || 0).toLocaleString();
+                const waText = lang.waTemplate(loan.borrowerName, instAmtFormatted, loan.dueDate);
+                const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waText)}`;
+
+                tr.innerHTML = `
+                    <td class="py-4 px-6">
+                        <div class="font-semibold text-slate-900 dark:text-white">${escapeHtml(loan.borrowerName || '')}</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"><i class="fa-solid fa-phone mr-1"></i>${escapeHtml(loan.phoneNum || '')}</div>
+                        ${loan.notes ? `<div class="text-xs text-slate-400 dark:text-slate-500 mt-1 italic"><i class="fa-regular fa-note-sticky mr-1"></i>${escapeHtml(loan.notes)}</div>` : ''}
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="font-semibold text-slate-800 dark:text-slate-200">${lang.currencyPrefix}${parseFloat(loan.installmentAmount || 0).toLocaleString()}</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Total: ${lang.currencyPrefix}${parseFloat(loan.totalAmount || 0).toLocaleString()}</div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="font-medium text-slate-800 dark:text-slate-200">${loan.dueDate}</div>
+                        <div class="mt-0.5">${countdownText}</div>
+                    </td>
+                    <td class="py-4 px-6">
+                        ${statusBadge}
+                    </td>
+                    <td class="py-4 px-6 text-right space-x-1">
+                        <button onclick="markPaymentReceived('${loan.id}')" title="වාරිකය ලැබුණි / ඊළඟ මාසයට යවන්න (Mark Received)" class="inline-flex items-center justify-center w-9 h-9 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800 rounded-xl transition">
+                            <i class="fa-solid fa-square-check text-base"></i>
+                        </button>
+                        <a href="${whatsappUrl}" target="_blank" title="WhatsApp Reminder" class="inline-flex items-center justify-center w-9 h-9 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900 rounded-xl transition">
+                            <i class="fa-brands fa-whatsapp text-lg"></i>
+                        </a>
+                        <button onclick="editLoan('${loan.id}')" title="Edit" class="inline-flex items-center justify-center w-9 h-9 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteLoan('${loan.id}')" title="Delete" class="inline-flex items-center justify-center w-9 h-9 bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900 rounded-xl transition">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openLoanModal(editId = null) {
+            document.getElementById('loanModal').classList.remove('hidden');
+            const form = document.getElementById('loanForm');
+            form.reset();
+            document.getElementById('loanId').value = '';
+            
+            const lang = i18n[currentLang];
+            document.getElementById('modalTitle').innerText = lang.modalAddTitle;
+            document.getElementById('dueDate').value = new Date().toISOString().split('T')[0];
+
+            if (editId) {
+                const loans = getLoans();
+                const loan = loans.find(l => l.id === editId);
+                if (loan) {
+                    document.getElementById('modalTitle').innerText = lang.modalEditTitle;
+                    document.getElementById('loanId').value = loan.id;
+                    document.getElementById('borrowerName').value = loan.borrowerName || '';
+                    document.getElementById('phoneNum').value = loan.phoneNum || '';
+                    document.getElementById('totalAmount').value = loan.totalAmount || '';
+                    document.getElementById('installmentAmount').value = loan.installmentAmount || '';
+                    document.getElementById('dueDate').value = loan.dueDate || '';
+                    document.getElementById('statusSelect').value = loan.status || 'active';
+                    document.getElementById('notes').value = loan.notes || '';
+                }
+            }
+        }
+
+        function closeLoanModal() {
+            document.getElementById('loanModal').classList.add('hidden');
+        }
+
+        function saveLoan(event) {
+            event.preventDefault();
+            const lang = i18n[currentLang];
+            const id = document.getElementById('loanId').value;
+            const borrowerName = document.getElementById('borrowerName').value.trim();
+            const phoneNum = document.getElementById('phoneNum').value.trim();
+            const totalAmount = parseFloat(document.getElementById('totalAmount').value);
+            const installmentAmount = parseFloat(document.getElementById('installmentAmount').value);
+            const dueDate = document.getElementById('dueDate').value;
+            const status = document.getElementById('statusSelect').value;
+            const notes = document.getElementById('notes').value.trim();
+
+            let loans = getLoans();
+
+            if (id) {
+                loans = loans.map(l => l.id === id ? { ...l, borrowerName, phoneNum, totalAmount, installmentAmount, dueDate, status, notes } : l);
+                showToast(lang.toastUpdateSuccess, 'success');
+            } else {
+                const newLoan = {
+                    id: Date.now().toString(),
+                    borrowerName,
+                    phoneNum,
+                    totalAmount,
+                    installmentAmount,
+                    dueDate,
+                    status,
+                    notes
+                };
+                loans.push(newLoan);
+                showToast(lang.toastAddSuccess, 'success');
+            }
+
+            saveLoansToStorage(loans);
+            closeLoanModal();
+            renderLoans();
+        }
+
+        function editLoan(id) {
+            openLoanModal(id);
+        }
+
+        function deleteLoan(id) {
+            const lang = i18n[currentLang];
+            showCustomConfirm(lang.confirmDeleteTitle, lang.confirmDeleteMsg, () => {
+                let loans = getLoans();
+                loans = loans.filter(l => l.id !== id);
+                saveLoansToStorage(loans);
+                renderLoans();
+                showToast(lang.toastDeleteSuccess, 'info');
+            });
+        }
+
+        function exportToExcel() {
+            const loans = getLoans();
+            const lang = i18n[currentLang];
+
+            if (typeof XLSX === 'undefined') {
+                showCustomAlert('Error', 'Excel library (SheetJS) is loading or unavailable.');
+                return;
+            }
+
+            const exportData = loans.map(loan => ({
+                "Borrower Name": loan.borrowerName,
+                "Phone Number": loan.phoneNum,
+                "Total Amount (LKR)": loan.totalAmount,
+                "Installment Amount (LKR)": loan.installmentAmount,
+                "Due Date": loan.dueDate,
+                "Status": loan.status === 'paid' ? 'Settled' : 'Active',
+                "Notes": loan.notes || ''
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Loans");
+
+            const max_width = exportData.reduce((w, r) => Math.max(w, (r["Borrower Name"] || '').length), 15);
+            worksheet['!cols'] = [
+                { wch: max_width + 5 },
+                { wch: 18 },
+                { wch: 20 },
+                { wch: 22 },
+                { wch: 15 },
+                { wch: 12 },
+                { wch: 30 }
+            ];
+
+            const fileName = `Navoda_Loan_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+            showToast(lang.toastExportSuccess, 'success');
+        }
+
+        function importFromExcel(event) {
+            const file = event.target.files[0];
+            const lang = i18n[currentLang];
+            if (!file) return;
+
+            if (typeof XLSX === 'undefined') {
+                showCustomAlert('Error', 'Excel library (SheetJS) is unavailable.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                    if (Array.isArray(jsonData) && jsonData.length > 0) {
+                        const importedLoans = jsonData.map((row, idx) => {
+                            const borrowerName = row["Borrower Name"] || row["borrowerName"] || row["Name"] || row["නම"] || `Borrower ${idx + 1}`;
+                            const phoneNum = String(row["Phone Number"] || row["phoneNum"] || row["Phone"] || row["දුරකථන අංකය"] || '');
+                            const totalAmount = parseFloat(row["Total Amount (LKR)"] || row["totalAmount"] || row["Total Amount"] || row["මුදල"] || 0);
+                            const installmentAmount = parseFloat(row["Installment Amount (LKR)"] || row["installmentAmount"] || row["Installment"] || row["වාරිකය"] || 0);
+                            
+                            let dueDate = row["Due Date"] || row["dueDate"] || row["Date"] || row["දිනය"] || new Date().toISOString().split('T')[0];
+                            if (typeof dueDate === 'number') {
+                                dueDate = new Date((dueDate - (25567 + 2)) * 86400 * 1000).toISOString().split('T')[0];
+                            }
+
+                            const statusVal = String(row["Status"] || row["status"] || row["තත්වය"] || '').toLowerCase();
+                            const status = (statusVal.includes('paid') || statusVal.includes('settled') || statusVal.includes('නිමකළ')) ? 'paid' : 'active';
+                            const notes = row["Notes"] || row["notes"] || row["සටහන්"] || '';
+
+                            return {
+                                id: (Date.now() + idx).toString(),
+                                borrowerName,
+                                phoneNum,
+                                totalAmount,
+                                installmentAmount,
+                                dueDate,
+                                status,
+                                notes
+                            };
+                        });
+
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(importedLoans));
+                        renderLoans();
+                        showToast(lang.toastImportSuccess, 'success');
+                    } else {
+                        showCustomAlert('Import Error', lang.toastImportError);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showCustomAlert('Import Error', lang.toastImportError);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900';
+            let icon = 'fa-circle-check text-emerald-400 dark:text-emerald-600';
+            if (type === 'error') { bgClass = 'bg-rose-900 text-white dark:bg-rose-100 dark:text-rose-900'; icon = 'fa-triangle-exclamation text-rose-300 dark:text-rose-600'; }
+
+            toast.className = `${bgClass} px-4 py-3 rounded-xl shadow-lg flex items-center space-x-3 text-sm transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i><span class="font-medium">${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => { container.removeChild(toast); }, 300);
+            }, 3500);
+        }
+
+        function showCustomAlert(title, message) {
+            const lang = i18n[currentLang];
+            document.getElementById('customModalTitle').innerText = title;
+            document.getElementById('customModalMessage').innerText = message;
+            document.getElementById('customModalIcon').className = 'w-12 h-12 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center text-xl mx-auto mb-3';
+            document.getElementById('customModalIcon').innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+            document.getElementById('customModalButtons').innerHTML = `<button onclick="closeCustomModal()" class="px-5 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition">${lang.okBtn}</button>`;
+            document.getElementById('customModal').classList.remove('hidden');
+        }
+
+        function showCustomConfirm(title, message, onConfirm) {
+            const lang = i18n[currentLang];
+            document.getElementById('customModalTitle').innerText = title;
+            document.getElementById('customModalMessage').innerText = message;
+            document.getElementById('customModalIcon').className = 'w-12 h-12 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center text-xl mx-auto mb-3';
+            document.getElementById('customModalIcon').innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            document.getElementById('customModalButtons').innerHTML = `
+                <button onclick="closeCustomModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-xl transition">${lang.cancelBtn}</button>
+                <button id="confirmBtn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">OK</button>
+            `;
+            document.getElementById('customModal').classList.add('hidden'); // Fix overlap
+            document.getElementById('customModal').classList.remove('hidden');
+            document.getElementById('confirmBtn').onclick = function() {
+                closeCustomModal();
+                onConfirm();
+            };
+        }
+
+        function closeCustomModal() {
+            document.getElementById('customModal').classList.add('hidden');
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
